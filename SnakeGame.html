@@ -1,63 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <meta charset="utf-8">
     <title>Snake Game</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* Styles CSS */
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
+
+        * {
             margin: 0;
-            background-color: black;
-            color: white;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
         }
 
-        .game-container {
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: #E3F2FD;
+        }
+
+        .wrapper {
+            width: 65vmin;
+            height: 70vmin;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 5px;
+            background: #293447;
+            box-shadow: 0 20px 40px rgba(52, 87, 220, 0.2);
+        }
+
+        .game-details {
+            color: #B8C6DC;
+            font-weight: 500;
+            font-size: 1.2rem;
+            padding: 20px 27px;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .play-board {
             display: grid;
-            grid-template-columns: repeat(20, 25px);
-            grid-template-rows: repeat(12, 25px);
-            gap: 2px;
-            background-color: black;
-            border: 2px solid white;
+            grid-template: repeat(12, 1fr) / repeat(20, 1fr);
+            background: #000000;
+            width: 100%;
+            aspect-ratio: 1 / 1;
         }
 
         .cell {
-            width: 25px;
-            height: 25px;
-            background-color: #333;
+            border: 1px solid #1E2A38;
+            width: 100%;
+            aspect-ratio: 1;
         }
 
         .snake {
-            background-color: green;
+            background: rgb(135, 221, 135);
         }
 
         .snake-head {
-            background-color: green;
-            border: 2px solid black;
+            background: rgb(72, 177, 72);
         }
 
         .food {
-            background-color: red;
+            background: #FF003D;
         }
 
-        h1 {
-            margin-bottom: 20px;
-            text-align: center;
-            color: red;
+        #keyboard {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         #keyboard button {
             margin: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 10px 12px;
+            font-size: 10px;
             border-radius: 5px;
             cursor: pointer;
         }
@@ -72,14 +98,6 @@
             color: black;
         }
 
-        #up,
-        #down,
-        #left,
-        #right {
-            background: gray;
-            color: white;
-        }
-
         #Pause {
             animation: blink 0.7s steps(2, pause) infinite;
             background: rgb(137, 137, 185);
@@ -92,31 +110,44 @@
 </head>
 
 <body>
-    <h1>Snake Game</h1>
-    <div class="game-container" id="grid">
-        <!-- La griglia sarà popolata dinamicamente -->
-    </div>
-    <div id="keyboard">
-        <button id="start">Start</button>
-        <button id="Restart">Restart</button>
-        <button id="Pause">Pause</button>
-        <button id="up"><span class="material-icons">arrow_upward</span></button>
-        <button id="down"><span class="material-icons">arrow_downward</span></button>
-        <button id="left"><span class="material-icons">arrow_leftward</span></button>
-        <button id="right"><span class="material-icons">arrow_rightward</span></button>
+    <audio id="background-music" loop>
+        <source src="snakecharmer.mp3" type="audio/mp3">
+        Votre navigateur ne supporte pas le tag audio.
+    </audio>
+    <div class="wrapper">
+        <div class="game-details">
+            <span class="score">Score: 0</span>
+            <span class="high-score">High Score: 0</span>
+        </div>
+        <div class="play-board" id="grid"></div>
+        <div id="keyboard">
+            <button id="start">Start</button>
+            <button id="Restart">Restart</button>
+            <button id="Pause">Pause</button>
+            <button id="up"><span class="material-icons">arrow_upward</span></button>
+            <button id="down"><span class="material-icons">arrow_downward</span></button>
+            <button id="right"><span class="material-icons">arrow_forward</span></button>
+            <button id="left"><span class="material-icons">arrow_back</span></button>
+        </div>
     </div>
 
     <script>
-        // Costanti
         const gridElement = document.getElementById('grid');
-        const rows = 12;
-        const cols = 20;
+        const rows = 12; // Numero di righe della griglia
+        const cols = 20; // Numero di colonne della griglia
 
-        // Stato iniziale
-        const snake = [{ x: 5, y: 6 }, { x: 5, y: 5 }, { x: 5, y: 4 }]; // Serpente iniziale
-        let food = {};
+        let snake = [{ x: 5, y: 6 }, { x: 5, y: 5 }, { x: 5, y: 4 }]; // Inizializzazione del serpente
+        let direction = { x: 0, y: 1 }; // Direzione iniziale (verso destra)
+        let food = {}; // Posizione del cibo
+        let gameRunning = false; // Stato del gioco
+        let isPaused = false; // Stato della pausa
+        let gameInterval = null; // Intervallo per l'aggiornamento del gioco
 
-        // Funzione per inizializzare la griglia
+        const backgroundMusic = document.getElementById("background-music");
+
+        /**
+         * Inizializza la griglia di gioco, creando le celle
+         */
         function initializeGrid() {
             gridElement.innerHTML = '';
             for (let row = 0; row < rows; row++) {
@@ -128,21 +159,36 @@
                     gridElement.appendChild(cell);
                 }
             }
-            renderSnake();
-            placeFood();
         }
 
-        // Funzione per rendere visibile il serpente
+        /**
+         * Mostra il serpente e il cibo nella griglia
+         */
         function renderSnake() {
-            snake.forEach(segment => {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('snake', 'snake-head', 'food');
+            });
+
+            snake.forEach((segment, index) => {
                 const snakeCell = document.querySelector(
                     `.cell[data-row="${segment.x}"][data-col="${segment.y}"]`
                 );
-                snakeCell.classList.add(segment === snake[0] ? 'snake-head' : 'snake');
+                if (snakeCell) {
+                    snakeCell.classList.add(index === 0 ? 'snake-head' : 'snake');
+                }
             });
+
+            const foodCell = document.querySelector(
+                `.cell[data-row="${food.x}"][data-col="${food.y}"]`
+            );
+            if (foodCell) {
+                foodCell.classList.add('food');
+            }
         }
 
-        // Funzione per posizionare il cibo
+        /**
+         * Genera una nuova posizione casuale per il cibo
+         */
         function placeFood() {
             do {
                 food = {
@@ -150,41 +196,141 @@
                     y: Math.floor(Math.random() * cols),
                 };
             } while (isCellOccupied(food.x, food.y));
-
-            const foodCell = document.querySelector(
-                `.cell[data-row="${food.x}"][data-col="${food.y}"]`
-            );
-            foodCell.classList.add('food');
         }
 
-        // Controlla se una cella è occupata dal serpente
+        /**
+         * Controlla se una cella è occupata dal serpente
+         */
         function isCellOccupied(x, y) {
             return snake.some(segment => segment.x === x && segment.y === y);
         }
-           // fonction pour le commencement du joue
-           function StartGame() {
-            //si le demmarage il ya 
-            if (gameRunning) {
-                //il ya pas de pause 
-                if (!isPaused) {
-                    //on appel la fonction pour la position de la nourriture 
-                    placeFood();
-                }
-                //on appel la fonction render pourvoir 
-                renderSnake();
-                isCellOccupied();
 
-                //on appel la fonction requestAnimatioFrame pour anime le jeux de snake  quand il commence 
-                requestAnimationFrame(StartGame);
+        /**
+         * Aggiorna la posizione del serpente in base alla direzione
+         */
+        function updateSnake() {
+            const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+            if (head.x < 0 || head.x >= rows || head.y < 0 || head.y >= cols || isCellOccupied(head.x, head.y)) {
+                endGame();
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                placeFood(); // Genera nuovo cibo
+            } else {
+                snake.pop(); // Rimuove la coda del serpente
             }
         }
 
-        // Initialisation du jeux 
-        renderSnake();
+        /**
+         * Ciclo principale del gioco
+         */
+        function gameLoop() {
+            if (isPaused || !gameRunning) return; // Interrompe se il gioco è in pausa o non avviato
+            updateSnake();
+            renderSnake();
+        }
 
-        // Inizializza la griglia al caricamento della pagina
-        initializeGrid();
+        /**
+         * Avvia il gioco
+         */
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            isPaused = false;
+            // Inizializza la direzione iniziale del serpente.
+/           //Il serpente si muove verso destra perché y=1 (orizzontale positivo).
+            // x=0 indica che non c'è movimento verticale.
+            direction = { x: 0, y: 1 }; 
+            snake = [{ x: 5, y: 6 }, { x: 5, y: 5 }, { x: 5, y: 4 }];
+
+            placeFood();
+            renderSnake();
+            backgroundMusic.play();
+            gameInterval = setInterval(gameLoop, 200);
+        }
+
+        /**
+         * Mette in pausa o riprende il gioco
+         */
+        function togglePause() {
+            //se non ce avvio del gioco lo si rinvia questa condizione 
+            if (!gameRunning) return;
+            //se c e pausa si mette quando non ce pausa 
+            isPaused = !isPaused;
+            const pauseButton = document.getElementById("Pause");
+            pauseButton.textContent = isPaused ? "Resume" : "Pause";
+            //se la pausa c e si mette stop alla musica se non la musica c e ancora 
+            if (isPaused) {
+                backgroundMusic.pause();
+            } else {
+                backgroundMusic.play();
+            }
+        }
+
+        /**
+         * Riavvia il gioco
+         */
+        function restartGame() {
+            //Questo comando interrompe l'esecuzione ripetuta del ciclo di gioco, che è stato avviato
+            // è la variabile che contiene l'identificatore del ciclo impostato da setInterval che serve ad accedere  al tempo" del gioco, 
+            //definendo ogni quanto tempo eseguire una specifica funzione (gameLoop)..
+            clearInterval(gameInterval);
+            //questa variabile indica che il gioco e in stato di fermo 
+            gameRunning = false;
+            //La funzione startGame serve a riavvirare il gioco 
+            startGame();
+        }
+
+        /**
+         * Termina il gioco
+         */
+        function endGame() {
+            //Questo comando interrompe l'esecuzione ripetuta del ciclo di gioco, che è stato avviato
+            // è la variabile che contiene l'identificatore del ciclo impostato da setInterval che serve ad accedere  al tempo" del gioco, 
+            //definendo ogni quanto tempo eseguire una specifica funzione (gameLoop)..
+            clearInterval(gameInterval);
+             //questa variabile indica che il gioco e in stato di fermo 
+            gameRunning = false;
+            alert("Game Over!");
+            backgroundMusic.pause();
+        }
+
+        /**
+         * Gestisce i movimenti del serpente in base alla direzione
+         */
+        function moveGame(move) {
+            switch (move) {
+                case "up":
+                    if (direction.x !== 1) direction = { x: -1, y: 0 };
+                    break;
+                case "down":
+                    if (direction.x !== -1) direction = { x: 1, y: 0 };
+                    break;
+                case "left":
+                    if (direction.y !== 1) direction = { x: 0, y: -1 };
+                    break;
+                case "right":
+                    if (direction.y !== -1) direction = { x: 0, y: 1 };
+                    break;
+            }
+        }
+
+        // Event listener per i pulsanti di controllo del gioco come i movimenti del serpenti con i pulsanti e i pulsanti per l inzio del gioco e rinizio e pausa 
+        document.getElementById("up").addEventListener("click", () => moveGame("up"));
+        document.getElementById("down").addEventListener("click", () => moveGame("down"));
+        document.getElementById("left").addEventListener("click", () => moveGame("left"));
+        document.getElementById("right").addEventListener("click", () => moveGame("right"));
+        document.getElementById("start").addEventListener("click", startGame);
+        document.getElementById("Pause").addEventListener("click", togglePause);
+        document.getElementById("Restart").addEventListener("click", restartGame);
+
+        initializeGrid(); // Inizializza la griglia all'avvio della pagina
     </script>
 </body>
 
 </html>
+
