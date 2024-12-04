@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>Snake Game</title>
+    <style>
+        /* Styles CSS */
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(20, 25px);
+            grid-template-rows: repeat(12, 25px);
+            gap: 2px;
+            background-color: black;
+            border: 2px solid white;
+        }
+
+        .cell {
+            width: 25px;
+            height: 25px;
+            background-color: #333;
+        }
+
+        .snake {
+            background-color: green;
+        }
+
+        .snake-head {
+            background-color: green;
+            border: 2px solid black;
+        }
+
+        .food {
+            background-color: red;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: red;
+        }
+
+        #keyboard button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #start {
+            background: red;
+            color: white;
+        }
+
+        #Restart {
+            background: greenyellow;
+            color: black;
+        }
+
+        #up,
+        #down,
+        #left,
+        #right {
+            background: gray;
+            color: white;
+        }
+
+        #Pause {
+            animation: blink 0.7s steps(2, pause) infinite;
+            background: rgb(137, 137, 185);
+            border-radius: 2px;
+            color: white;
+            cursor: pointer;
+            font-size: 28px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Snake Game</h1>
+    <div class="game-container" id="grid">
+        <!-- La griglia sarà popolata dinamicamente -->
+    </div>
+    <div id="keyboard">
+        <button id="start">Start</button>
+        <button id="Restart">Restart</button>
+        <button id="Pause">Pause</button>
+        <button id="up"><span class="material-icons">arrow_upward</span></button>
+        <button id="down"><span class="material-icons">arrow_downward</span></button>
+        <button id="left"><span class="material-icons">arrow_leftward</span></button>
+        <button id="right"><span class="material-icons">arrow_rightward</span></button>
+    </div>
+
+    <script>
+        // Costanti
+        const gridElement = document.getElementById('grid');
+        const rows = 12;
+        const cols = 20;
+
+        // Stato iniziale
+        const snake = [{ x: 5, y: 6 }, { x: 5, y: 5 }, { x: 5, y: 4 }]; // Serpente iniziale
+        let food = {};
+
+        // Funzione per inizializzare la griglia
+        function initializeGrid() {
+            gridElement.innerHTML = '';
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    gridElement.appendChild(cell);
+                }
+            }
+            renderSnake();
+            placeFood();
+        }
+
+        // Funzione per rendere visibile il serpente
+        function renderSnake() {
+            snake.forEach(segment => {
+                const snakeCell = document.querySelector(
+                    `.cell[data-row="${segment.x}"][data-col="${segment.y}"]`
+                );
+                snakeCell.classList.add(segment === snake[0] ? 'snake-head' : 'snake');
+            });
+        }
+
+        // Funzione per posizionare il cibo
+        function placeFood() {
+            do {
+                food = {
+                    x: Math.floor(Math.random() * rows),
+                    y: Math.floor(Math.random() * cols),
+                };
+            } while (isCellOccupied(food.x, food.y));
+
+            const foodCell = document.querySelector(
+                `.cell[data-row="${food.x}"][data-col="${food.y}"]`
+            );
+            foodCell.classList.add('food');
+        }
+
+        // Controlla se una cella è occupata dal serpente
+        function isCellOccupied(x, y) {
+            return snake.some(segment => segment.x === x && segment.y === y);
+        }
+           // fonction pour le commencement du joue
+           function StartGame() {
+            //si le demmarage il ya 
+            if (gameRunning) {
+                //il ya pas de pause 
+                if (!isPaused) {
+                    //on appel la fonction pour la position de la nourriture 
+                    placeFood();
+                }
+                //on appel la fonction render pourvoir 
+                renderSnake();
+                isCellOccupied();
+
+                //on appel la fonction requestAnimatioFrame pour anime le jeux de snake  quand il commence 
+                requestAnimationFrame(StartGame);
+            }
+        }
+
+        // Initialisation du jeux 
+        renderSnake();
+
+        // Inizializza la griglia al caricamento della pagina
+        initializeGrid();
+    </script>
+</body>
+
+</html>
